@@ -17,6 +17,24 @@ and returns the worker's answer as a normal chat completion (streaming
 supported). The **worker** is where your AI lives — a script, an agent, or a
 person behind a cron job.
 
+## Full stack: 9Router + muse-bridge on one VPS
+
+`muse-bridge` is the *online* half. The other half is 9Router itself, stocked
+with provider quota. This repo bundles both steps:
+
+1. **9Router + provider quota** — [`providers/antigravity-gsuite-to-9router/`](providers/antigravity-gsuite-to-9router/)
+   bulk-adds Google accounts to 9Router's Antigravity provider (`bot.js`) and
+   cleans up quota-exhausted accounts (`delete.js`). Install 9Router
+   (`npm i -g 9router`), run it on `127.0.0.1:20128`, then use that tooling to
+   fill it with quota. See its own README for details.
+   > Note: Google designs Antigravity for personal accounts and recommends
+   > `@gmail.com` when work/school accounts can't sign in — bulk Workspace
+   > provisioning can hit login restrictions. Use at your own discretion.
+2. **muse-bridge** (this repo root) — exposes your worker as an OpenAI-compatible
+   API (quick start below). Point `worker_example.py`'s `BACKEND_*` at your
+   local 9Router (`http://127.0.0.1:20128/v1`), and any remote 9Router can
+   consume `https://YOUR-HOST/v1` as a provider.
+
 ## Prerequisites
 
 Prepare these before you start (5–10 minutes):
@@ -28,7 +46,7 @@ Prepare these before you start (5–10 minutes):
 | Public reachability | One of: public IP + open firewall port `8765`, a domain + reverse proxy (Caddy/Nginx) with TLS, or `cloudflared tunnel` (free, no open ports) |
 | Git | to clone this repo |
 | A worker | something to answer the queue: `worker_example.py` + any OpenAI-compatible backend (its URL, API key, model id) — or your own agent implementing `GET /muse/pending` → `POST /muse/answer` |
-| A 9Router (or any OpenAI client) | consumes the bridge via *Add OpenAI Compatible* |
+| A 9Router with quota (or any OpenAI client) | install 9Router, stock it via `providers/antigravity-gsuite-to-9router/`, then consume the bridge via *Add OpenAI Compatible* |
 
 Both the bridge **and** whatever exposes it (cloudflared / reverse proxy) must
 stay running. If either stops, clients get connection errors — nothing breaks

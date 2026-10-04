@@ -43,7 +43,9 @@ fi
 
 cp systemd/muse-bridge.service /etc/systemd/system/muse-bridge.service
 systemctl daemon-reload
-systemctl enable --now muse-bridge.service
+systemctl enable muse-bridge.service
+# restart (not just --now): re-runs must pick up the new bridge.py
+systemctl restart muse-bridge.service
 echo "[install] muse-bridge is up: $(systemctl is-active muse-bridge.service)"
 echo "[install] health check:"
 sleep 2

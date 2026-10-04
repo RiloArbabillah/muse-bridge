@@ -28,7 +28,9 @@ systemctl daemon-reload
 systemctl enable --now muse-bridge.service
 echo "[install] muse-bridge is up: $(systemctl is-active muse-bridge.service)"
 echo "[install] health check:"
-curl -s http://127.0.0.1:8765/health; echo
+sleep 2
+curl -s --max-time 10 http://127.0.0.1:8765/health \
+  || echo "(not responding yet — check: sudo journalctl -u muse-bridge -n 20)"
 echo
 echo "[install] next: expose port 8765 (firewall / reverse proxy / cloudflared),"
 echo "then run a worker: see README.md (worker_example.py)."

@@ -67,12 +67,13 @@ sudo ./install.sh        # installs to /opt/muse-bridge, generates API keys
 - **user key** → paste into 9Router as the provider API key
 - **worker key** → give to whatever answers the queue (see below)
 
-Then expose the bridge publicly (pick one):
-- **Direct**: open port `8765` in the firewall, point 9Router at `http://YOUR-IP:8765/v1`
-  (use a reverse proxy with TLS for anything serious)
+Then expose the bridge publicly (pick one). `cloudflared` is already installed
+by `install.sh`, so the tunnel option needs no extra setup:
 - **Cloudflare Tunnel** (free, no open ports):
   `cloudflared tunnel --url http://127.0.0.1:8765`
   → base URL becomes `https://<id>.trycloudflare.com/v1`
+- **Direct**: open port `8765` in the firewall, point 9Router at `http://YOUR-IP:8765/v1`
+  (use a reverse proxy with TLS for anything serious)
 - **Reverse proxy**: Caddy/Nginx in front of `127.0.0.1:8765` with your domain + TLS
 
 ## 9Router setup

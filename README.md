@@ -17,6 +17,25 @@ and returns the worker's answer as a normal chat completion (streaming
 supported). The **worker** is where your AI lives — a script, an agent, or a
 person behind a cron job.
 
+## Prerequisites
+
+Prepare these before you start (5–10 minutes):
+
+| Need | Details |
+|---|---|
+| A machine for the bridge | VPS (Debian/Ubuntu with root SSH) **or** any always-on computer (Windows/macOS/Linux). The bridge itself uses ~30 MB RAM. |
+| Python 3 | 3.8+; `install.sh` installs it on Debian/Ubuntu, on Windows get it from python.org (tick "Add to PATH") |
+| Public reachability | One of: public IP + open firewall port `8765`, a domain + reverse proxy (Caddy/Nginx) with TLS, or `cloudflared tunnel` (free, no open ports) |
+| Git | to clone this repo |
+| A worker | something to answer the queue: `worker_example.py` + any OpenAI-compatible backend (its URL, API key, model id) — or your own agent implementing `GET /muse/pending` → `POST /muse/answer` |
+| A 9Router (or any OpenAI client) | consumes the bridge via *Add OpenAI Compatible* |
+
+Both the bridge **and** whatever exposes it (cloudflared / reverse proxy) must
+stay running. If either stops, clients get connection errors — nothing breaks
+permanently, just start them again. Note that `cloudflared` quick-tunnel URLs
+change on every restart; use a named tunnel (free, needs a Cloudflare account)
+for a stable URL.
+
 ## Quick start (VPS, Debian/Ubuntu)
 
 ```bash

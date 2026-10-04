@@ -43,6 +43,7 @@ Prepare these before you start (5–10 minutes):
 |---|---|
 | A machine for the bridge | VPS (Debian/Ubuntu with root SSH) **or** any always-on computer (Windows/macOS/Linux). The bridge itself uses ~30 MB RAM. |
 | Python 3 | 3.8+; `install.sh` installs it on Debian/Ubuntu, on Windows get it from python.org (tick "Add to PATH") |
+| Node.js 18+ | only for the provider tooling (`providers/antigravity-gsuite-to-9router/`) and for installing 9Router via npm |
 | Public reachability | One of: public IP + open firewall port `8765`, a domain + reverse proxy (Caddy/Nginx) with TLS, or `cloudflared tunnel` (free, no open ports) |
 | Git | to clone this repo |
 | A worker | something to answer the queue: `worker_example.py` + any OpenAI-compatible backend (its URL, API key, model id) — or your own agent implementing `GET /muse/pending` → `POST /muse/answer` |
@@ -118,17 +119,64 @@ loop — the bridge doesn't care, it just delivers the `content` string.
 Key management: `python3 bridge.py keygen --role user|worker --label <name>`
 (prints once), `keylist` (prefixes only), `keydel <prefix|label>`.
 
-## Windows quick start
+## Windows setup (full stack)
+
+Everything also runs on Windows 10/11. Install once:
+
+- [Python 3](https://www.python.org/) (tick "Add to PATH")
+- [Node.js](https://nodejs.org/) v18+
+- [cloudflared](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/)
+- A Chromium-based browser (Chrome, Edge, or Brave) — needed by the provider tooling
+
+### 1. 9Router + provider quota
+
+```powershell
+npm i -g 9router
+9router                      # keep this window open, serves 127.0.0.1:20128
+```
+
+Set the 9Router dashboard password to `123456` (the provider tooling logs in
+with it), then in a **new** PowerShell window:
+
+```powershell
+cd providers\antigravity-gsuite-to-9router
+npm install
+# create akun.txt: one "email|password" per line, then:
+node bot.js                  # bulk-add accounts to the Antigravity provider
+node delete.js               # remove quota-exhausted accounts
+```
+
+### 2. Bridge
 
 ```powershell
 $env:BRIDGE_QUEUE="C:\muse-bridge\queue"
 python C:\muse-bridge\bridge.py keygen --role user --label 9router
 python C:\muse-bridge\bridge.py keygen --role worker --label worker-1
-python C:\muse-bridge\bridge.py          # serves on 127.0.0.1:8765
+python C:\muse-bridge\bridge.py          # serves 127.0.0.1:8765, keep running
 ```
-Then expose with `cloudflared tunnel --url http://127.0.0.1:8765`.
+
 Note: `$env:` only applies to the current PowerShell session — always start
 the bridge from a terminal where `BRIDGE_QUEUE` is set (verify with `keylist`).
+
+### 3. Worker
+
+```powershell
+$env:BRIDGE_URL="http://127.0.0.1:8765"
+$env:BRIDGE_WORKER_KEY="<worker key from step 2>"
+$env:BACKEND_URL="http://127.0.0.1:20128/v1"
+$env:BACKEND_KEY=""
+$env:BACKEND_MODEL="<provider-prefix>/<model>"   # e.g. antigravity/gemini-2.5-pro
+python worker_example.py     # keep running
+```
+
+### 4. Expose publicly
+
+```powershell
+cloudflared tunnel --url http://127.0.0.1:8765     # keep this window open
+```
+
+Base URL becomes `https://<id>.trycloudflare.com/v1`. The URL changes on every
+restart — use a named tunnel (free, needs a Cloudflare account) for a stable one.
 
 ## Endpoints
 

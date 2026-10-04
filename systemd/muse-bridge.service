@@ -1,0 +1,14 @@
+[Unit]
+Description=muse-bridge (OpenAI-compatible agent bridge)
+After=network.target
+Wants=network.target
+
+[Service]
+ExecStart=/usr/bin/python3 /opt/muse-bridge/bridge.py
+Environment=BRIDGE_QUEUE=/opt/muse-bridge/queue
+Restart=always
+RestartSec=5
+User=root
+
+[Install]
+WantedBy=multi-user.target

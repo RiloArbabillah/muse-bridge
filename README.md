@@ -111,7 +111,7 @@ Anything that can do HTTPS can be a worker. Protocol (all need
 
 | Endpoint | Meaning |
 |---|---|
-| `GET /muse/pending?limit=5` | atomically claim up to 5 jobs (180s lease each) |
+| `GET /muse/pending?limit=5&wait=50` | atomically claim up to 5 jobs (180s lease each). `wait` (0–120s, default 0) long-polls: the request is held until a job arrives or the timeout hits — use it to cut pickup latency from a full poll interval down to ~seconds |
 | `POST /muse/answer` `{"id","content"}` | answer a claimed job |
 | `POST /muse/release` `{"id"}` | give a job back to the queue |
 | `GET /health` | no auth, for monitoring |

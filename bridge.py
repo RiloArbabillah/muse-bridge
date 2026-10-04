@@ -12,9 +12,12 @@ v5 (new):
     python bridge.py keylist                 # label/role/created/key-prefix only
     python bridge.py keydel <prefix|label>    # revoke
 - Worker pull API (all require `Authorization: Bearer <worker-key>`):
-    GET  /muse/pending?limit=3   -> atomically leases up to `limit` jobs
+    GET  /muse/pending?limit=3&wait=50 -> atomically leases up to `limit` jobs
                                    (lease = LEASE_SECS, default 180s);
                                    {"jobs":[{id,received_at,request}],"count":N,"pending":M}
+                                   `wait` (0-120s, default 0) long-polls: holds
+                                   the request until a job arrives or the
+                                   timeout hits — use it to cut pickup latency
     POST /muse/answer  {"id","content"} -> completes the job; the waiting
                                           /v1/chat/completions returns it
     POST /muse/release {"id"}           -> releases the lease early; the job
@@ -372,13 +375,22 @@ class H(BaseHTTPRequestHandler):
             elif path.rstrip("/") == "/muse/pending":
                 if not self._require("worker"):
                     return
+                qs = parse_qs(urlparse(self.path).query)
                 try:
-                    limit = int(parse_qs(urlparse(self.path).query)
-                                    .get("limit", ["3"])[0])
+                    limit = int(qs.get("limit", ["3"])[0])
                 except Exception:
                     limit = 3
                 limit = max(1, min(10, limit))
+                try:
+                    wait = float(qs.get("wait", ["0"])[0])
+                except Exception:
+                    wait = 0
+                wait = max(0.0, min(120.0, wait))
+                deadline = time.time() + wait
                 jobs, pending_n = _claim_jobs(limit, self._label())
+                while not jobs and time.time() < deadline:
+                    time.sleep(1)
+                    jobs, pending_n = _claim_jobs(limit, self._label())
                 self._send(200, {"jobs": jobs, "count": len(jobs),
                                  "pending": pending_n})
             else:

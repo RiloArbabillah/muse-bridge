@@ -50,7 +50,7 @@ sleep 2
 curl -s --max-time 10 http://127.0.0.1:8765/health \
   || echo "(not responding yet — check: sudo journalctl -u muse-bridge -n 20)"
 echo
-echo "[install] done. Starting persistent cloudflared tunnel (systemd)..."
+echo "[install] starting persistent cloudflared tunnel (systemd)..."
 CF_BIN="$(command -v cloudflared)"
 sed "s|@CLOUDFLARED@|$CF_BIN|" systemd/cloudflared-muse-bridge.service \
   > /etc/systemd/system/cloudflared-muse-bridge.service
@@ -58,10 +58,28 @@ chmod 644 /etc/systemd/system/cloudflared-muse-bridge.service
 systemctl daemon-reload
 systemctl enable --now cloudflared-muse-bridge.service
 echo "[install] tunnel service: $(systemctl is-active cloudflared-muse-bridge.service)"
-echo "[install] public URL (note: changes every time the tunnel restarts):"
+
+# --- final summary: everything needed, in one place -------------------------
 sleep 3
-journalctl -u cloudflared-muse-bridge -n 100 --no-pager 2>/dev/null \
-  | grep -o 'https://[a-z0-9-]*\.trycloudflare\.com' | head -1
+TUNNEL_URL=$(journalctl -u cloudflared-muse-bridge -n 100 --no-pager 2>/dev/null \
+  | grep -o 'https://[a-z0-9-]*\.trycloudflare\.com' | head -1)
 echo
-echo "(Disable the tunnel anytime: systemctl disable --now cloudflared-muse-bridge)"
-echo "Then run a worker: see README.md (worker_example.py)."
+echo "=================================================================="
+echo "  muse-bridge is ready! Save this:"
+if [ -n "$TUNNEL_URL" ]; then
+  echo "  Base URL  (9Router -> Add OpenAI Compatible):"
+  echo "    ${TUNNEL_URL}/v1"
+  echo "  (tunnel URL changes on restart;"
+  echo "   disable tunnel: systemctl disable --now cloudflared-muse-bridge)"
+else
+  echo "  Base URL: tunnel not up yet — check: journalctl -u cloudflared-muse-bridge"
+fi
+echo "  API keys:"
+python3 - "$DEST/keys.json" <<'PYEOF'
+import json, sys
+for k in json.load(open(sys.argv[1]))["keys"]:
+    print(f"    [{k['role']}] label={k['label']}: {k['key']}")
+PYEOF
+echo "    -> put the [user] key into 9Router as the provider API key"
+echo "    -> give the [worker] key to whoever answers the queue"
+echo "=================================================================="

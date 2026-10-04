@@ -132,6 +132,17 @@ else {
 }
 
 Write-Host ""
-Write-Host "[install] done. Expose the bridge with cloudflared (already installed):"
-Write-Host "  cloudflared tunnel --url http://127.0.0.1:8765"
-Write-Host "Then run a worker: see README.md (worker_example.py)."
+Write-Host "=================================================================="
+Write-Host "  muse-bridge is ready! Save this:"
+Write-Host "  Base URL (local): http://127.0.0.1:8765/v1"
+Write-Host "  For public access, run (keep the window open):"
+Write-Host "    cloudflared tunnel --url http://127.0.0.1:8765"
+Write-Host "  -> base URL becomes https://<id>.trycloudflare.com/v1"
+Write-Host "  API keys:"
+$keys = (Get-Content (Join-Path $DEST "keys.json") -Raw) | ConvertFrom-Json
+foreach ($k in $keys.keys) {
+  Write-Host ("    [{0}] label={1}: {2}" -f $k.role, $k.label, $k.key)
+}
+Write-Host "    -> put the [user] key into 9Router as the provider API key"
+Write-Host "    -> give the [worker] key to whoever answers the queue"
+Write-Host "=================================================================="

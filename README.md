@@ -67,12 +67,23 @@ sudo ./install.sh        # installs to /opt/muse-bridge, generates API keys
 - **user key** → paste into 9Router as the provider API key
 - **worker key** → give to whatever answers the queue (see below)
 
-Then expose the bridge publicly (pick one). `cloudflared` is already installed
-by `install.sh`, so the tunnel option needs no extra setup:
-- **Cloudflare Tunnel** (free, no open ports):
-  `cloudflared tunnel --url http://127.0.0.1:8765`
-  → base URL becomes `https://<id>.trycloudflare.com/v1`
-- **Direct**: open port `8765` in the firewall, point 9Router at `http://YOUR-IP:8765/v1`
+`install.sh` also starts a **persistent Cloudflare tunnel** (systemd service
+`cloudflared-muse-bridge`: auto-starts on boot, auto-restarts on failure), so
+the bridge is publicly reachable right away — free, no open ports. Get the
+current public URL any time with:
+
+```bash
+journalctl -u cloudflared-muse-bridge -n 100 --no-pager | grep -o 'https://[a-z0-9-]*\.trycloudflare\.com' | head -1
+```
+
+Base URL becomes `https://<id>.trycloudflare.com/v1`. Note: quick-tunnel URLs
+change on every restart — after a restart, re-check the URL and update your
+9Router provider + worker config. For a stable URL use a named tunnel (free,
+needs a Cloudflare account).
+
+Prefer a different exposure? Pick one instead and disable the tunnel:
+- **Direct**: `systemctl disable --now cloudflared-muse-bridge`, open port
+  `8765` in the firewall, point 9Router at `http://YOUR-IP:8765/v1`
   (use a reverse proxy with TLS for anything serious)
 - **Reverse proxy**: Caddy/Nginx in front of `127.0.0.1:8765` with your domain + TLS
 

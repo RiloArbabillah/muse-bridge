@@ -1,0 +1,14 @@
+[Unit]
+Description=cloudflared quick tunnel for muse-bridge (public /v1 endpoint)
+After=network-online.target muse-bridge.service
+Wants=network-online.target
+BindsTo=muse-bridge.service
+
+[Service]
+Type=simple
+ExecStart=@CLOUDFLARED@ tunnel --url http://127.0.0.1:8765
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

@@ -63,7 +63,10 @@ cd /opt/muse-bridge-src
 sudo ./install.sh        # installs to /opt/muse-bridge, generates API keys
 ```
 
-`install.sh` prints two API keys **once** — save them:
+At the end, `install.sh` prints a summary with everything you need — the public
+**Base URL** and both **API keys** (it reads them from `keys.json`, so re-runs
+show them again too):
+- **Base URL** → paste into 9Router as *Add OpenAI Compatible* base URL
 - **user key** → paste into 9Router as the provider API key
 - **worker key** → give to whatever answers the queue (see below)
 

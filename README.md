@@ -149,6 +149,20 @@ node delete.js               # remove quota-exhausted accounts
 
 ### 2. Bridge
 
+One command (run PowerShell **as Administrator** from the repo folder):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File install.ps1
+```
+
+It installs Python 3 (via winget if missing), copies the bridge to
+`C:\muse-bridge`, sets `BRIDGE_QUEUE` persistently, generates the user +
+worker API keys (printed once — save them), installs cloudflared, and
+registers a Scheduled Task `muse-bridge` that starts at logon and restarts
+on failure. Re-running is safe: existing keys are kept.
+
+Manual alternative (if you prefer to do it by hand):
+
 ```powershell
 $env:BRIDGE_QUEUE="C:\muse-bridge\queue"
 python C:\muse-bridge\bridge.py keygen --role user --label 9router
@@ -171,6 +185,8 @@ python worker_example.py     # keep running
 ```
 
 ### 4. Expose publicly
+
+`cloudflared` is already installed by `install.ps1`:
 
 ```powershell
 cloudflared tunnel --url http://127.0.0.1:8765     # keep this window open

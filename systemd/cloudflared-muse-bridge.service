@@ -2,7 +2,11 @@
 Description=cloudflared quick tunnel for muse-bridge (public /v1 endpoint)
 After=network-online.target muse-bridge.service
 Wants=network-online.target
-BindsTo=muse-bridge.service
+# NOTE: intentionally NO BindsTo=muse-bridge.service here.
+# BindsTo would stop the tunnel every time the bridge restarts (e.g. on
+# install.sh re-runs) and it does not reliably come back, leaving the public
+# URL dead (Cloudflare 1033). Without it, a bridge restart only causes a few
+# seconds of 502s while the tunnel stays connected.
 
 [Service]
 Type=simple
